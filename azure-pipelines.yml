@@ -4,16 +4,40 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
+  - master
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: "ubuntu-latest"
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: "3.x"
+      addToPath: true
+  - script: |
+      sudo apt update
+      sudo apt install mysql-server -y
+      sudo pat install libmysqlclient-dev -y
+    displayName: "Install dependencies, mysql libmysqlclient"
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  - script: |
+      sudo apt install python3-pip python3-dev python3-setuptools -y
+    displayName: "Install dependencies, python3"
+
+  - script: |
+      sudo apt install build-essential libssl-dev libffi-dev -y
+    displayName: "Install dependencies, other dependencies"
+
+  - script: |
+      python -m venv venv
+      source venv/bin/activate
+    displayName: "Activate environment"
+
+  - script: |
+      source venv/bin/activate
+      python3 manage.py runserver -h "0.0.0.0" -p 5000
+    displayName: "Run server"
+
+  - task: AzureRmWebAppDeployment@4
+    condition: succeeded()
+    displayName: "Deploy to Azure"
